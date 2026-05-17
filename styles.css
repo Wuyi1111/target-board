@@ -99,6 +99,9 @@ button{font-family:inherit}
 .rail-btn[data-section="add"]{touch-action:none}
 .rail-btn.dragging{background:var(--accent);color:#fff;cursor:grabbing}
 
+/* Mobile header — large bold title at the top */
+.mobile-header{display:none}
+
 .add-ghost{
   position:fixed;
   pointer-events:none;
@@ -555,22 +558,90 @@ kbd{
    ============================================================ */
 
 @media (max-width:639px){
-  :root{--rail-size:56px}
-  .rail{
-    left:50%;top:auto;
-    bottom:calc(var(--rail-margin) + env(safe-area-inset-bottom,0px));
-    transform:translateX(-50%);
-    flex-direction:row;
-    width:auto;height:var(--rail-size);
-    padding:6px 8px;
-    border-radius:18px;
-    gap:4px;
+  :root{
+    --rail-size:64px;
+    --mobile-header-h:54px;
   }
-  .rail-btn{width:44px;height:44px;border-radius:12px}
 
+  /* Show the big native-style header */
+  .mobile-header{
+    display:block;
+    position:fixed;
+    top:env(safe-area-inset-top,0px);
+    left:0;right:0;
+    padding:14px 22px 10px;
+    z-index:30;
+    pointer-events:none;
+  }
+  .mobile-header h1{
+    font-size:28px;
+    font-weight:700;
+    letter-spacing:-0.02em;
+    line-height:1.15;
+    color:var(--text);
+  }
+
+  /* Canvas sits between the header and the tab bar so rings + cards
+     are visible without being clipped */
+  .canvas-wrap{
+    position:fixed;
+    top:calc(env(safe-area-inset-top,0px) + var(--mobile-header-h));
+    bottom:calc(env(safe-area-inset-bottom,0px) + var(--rail-size));
+    left:0;right:0;
+    height:auto;width:auto;
+  }
+
+  /* Flush bottom tab bar — full width, native iOS look */
+  .rail{
+    left:0;right:0;bottom:0;top:auto;
+    transform:none;
+    width:auto;height:auto;
+    flex-direction:row;
+    justify-content:space-around;
+    align-items:center;
+    padding:8px 12px;
+    padding-bottom:max(8px,env(safe-area-inset-bottom,0px));
+    background:var(--surface);
+    border:none;
+    border-top:1px solid var(--border);
+    border-radius:0;
+    box-shadow:0 -2px 12px rgba(0,0,0,0.04);
+    gap:0;
+  }
+  .rail-btn{
+    width:48px;height:48px;
+    border-radius:12px;
+    color:var(--muted);
+    flex:0 0 auto;
+  }
+  .rail-btn:hover,
+  .rail-btn.active{
+    background:transparent;
+    color:var(--text);
+  }
+
+  /* The + button: dark filled, larger, the primary action */
+  .rail-btn.rail-btn-primary{
+    background:var(--text);
+    color:#fff;
+    width:54px;height:54px;
+    border-radius:16px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.18);
+  }
+  .rail-btn.rail-btn-primary:hover,
+  .rail-btn.rail-btn-primary.active{
+    background:var(--text);
+    color:#fff;
+  }
+  .rail-btn.rail-btn-primary.dragging{
+    background:var(--accent);
+    color:#fff;
+  }
+
+  /* Float panel slides up just above the tab bar */
   .float-panel{
     left:12px;right:12px;top:auto;
-    bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px));
+    bottom:calc(var(--rail-size) + env(safe-area-inset-bottom,0px) + 12px);
     width:auto;
     max-height:65vh;max-height:65dvh;
     transform:translateY(10px) scale(.98);
@@ -578,8 +649,8 @@ kbd{
   .float-panel.open{transform:translateY(0) scale(1)}
 
   .trash-zone{
-    left:max(16px, env(safe-area-inset-left, 0px));
-    bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px));
+    left:max(16px,env(safe-area-inset-left,0px));
+    bottom:calc(var(--rail-size) + env(safe-area-inset-bottom,0px) + 14px);
     width:52px;height:52px;
   }
 
@@ -594,17 +665,11 @@ kbd{
 }
 
 /* In mobile Safari browser mode the URL bar sits at the bottom and overlaps
-   any position:fixed elements. Push the rail, panel, and trash up far enough
-   to clear it. When installed as a PWA (display-mode:standalone) this rule
-   does not apply, so layout stays tight. */
+   any position:fixed elements. Push everything up 80px to clear it. In
+   standalone PWA mode this rule does not apply. */
 @media (max-width:639px) and (display-mode:browser){
-  .rail{
-    bottom:calc(var(--rail-margin) + env(safe-area-inset-bottom, 0px) + 80px);
-  }
-  .float-panel{
-    bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px) + 80px);
-  }
-  .trash-zone{
-    bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px) + 80px);
-  }
+  .rail{bottom:80px}
+  .canvas-wrap{bottom:calc(env(safe-area-inset-bottom,0px) + var(--rail-size) + 80px)}
+  .float-panel{bottom:calc(var(--rail-size) + env(safe-area-inset-bottom,0px) + 92px)}
+  .trash-zone{bottom:calc(var(--rail-size) + env(safe-area-inset-bottom,0px) + 94px)}
 }
