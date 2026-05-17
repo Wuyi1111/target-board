@@ -1,6 +1,6 @@
 {
   "name": "target-board",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "本地运行的靶环式任务看板 / A local-only target-style task board",
   "private": true,
   "scripts": {

@@ -4,8 +4,8 @@
    靶式看板 v2 — app.js
    ============================================================ */
 
-const APP_VERSION = '1.0.5';
-const SW_CACHE_NAME = 'tbk-v1.0.5';
+const APP_VERSION = '1.0.6';
+const SW_CACHE_NAME = 'tbk-v1.0.6';
 const SCHEMA_VERSION = 2;
 const LS_KEY = 'tbk_state_v2';
 const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
@@ -118,7 +118,6 @@ function load() {
     state.users = [
       { id: 'u1', name: 'User A', color: hslToHex(260, 55, 55) },
       { id: 'u2', name: 'User B', color: hslToHex(140, 55, 50) },
-      { id: 'u3', name: 'User C', color: hslToHex(340, 55, 55) },
     ];
   }
 }
@@ -627,7 +626,9 @@ function openCreateModal(drop) {
   document.getElementById('e-zone').value = drop.zone;
   populateUserSelects('e-user', state.users[0]?.id);
   document.getElementById('modal').style.display = 'flex';
-  setTimeout(() => document.getElementById('e-title').focus(), 60);
+  // Sync focus inside the user gesture so iOS opens the keyboard immediately.
+  // A setTimeout would break the gesture chain and silently fail on iOS PWA.
+  document.getElementById('e-title').focus();
 }
 
 function saveEdit() {
@@ -886,7 +887,6 @@ function clearAllData() {
   state.users = [
     { id: 'u1', name: 'User A', color: hslToHex(260, 55, 55) },
     { id: 'u2', name: 'User B', color: hslToHex(140, 55, 50) },
-    { id: 'u3', name: 'User C', color: hslToHex(340, 55, 55) },
   ];
   state.history = [];
   state.filters = { users: ['all'], zone: 'all' };
@@ -930,7 +930,9 @@ function openPanel(section) {
   document.querySelectorAll('.ps').forEach(s => s.classList.toggle('active', s.dataset.content === section));
   if (section === 'stats') renderZoneCounts();
   if (section === 'settings') { renderSettings(); renderHistoryPanel(); }
-  if (section === 'add') setTimeout(() => document.getElementById('f-title').focus(), 60);
+  // Sync focus so iOS keyboard pops up immediately when the add panel opens
+  // via the rail button. setTimeout would break the user gesture chain.
+  if (section === 'add') document.getElementById('f-title').focus();
 }
 
 function closePanel() {
