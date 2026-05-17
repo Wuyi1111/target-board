@@ -4,8 +4,8 @@
    靶式看板 v2 — app.js
    ============================================================ */
 
-const APP_VERSION = '1.0.4';
-const SW_CACHE_NAME = 'tbk-v1.0.4';
+const APP_VERSION = '1.0.5';
+const SW_CACHE_NAME = 'tbk-v1.0.5';
 const SCHEMA_VERSION = 2;
 const LS_KEY = 'tbk_state_v2';
 const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
@@ -13,7 +13,7 @@ const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
 const ZONE_LABELS = { urgent: '紧急', todo: '需要做', should: '应做' };
 const ZONE_COLORS = { urgent: '#d75e4e', todo: '#d88a3a', should: '#b8b5ad' };
 const RING_CLASS = { urgent: 'r-urgent', todo: 'r-todo', should: 'r-should' };
-const SECTION_TITLES = { add: '添加任务', filter: '筛选', users: '用户管理', stats: '圈层统计', history: '历史记录', settings: '设置' };
+const SECTION_TITLES = { add: '添加任务', filter: '筛选', users: '用户管理', stats: '圈层统计', settings: '设置' };
 
 const state = {
   tasks: [],
@@ -929,8 +929,7 @@ function openPanel(section) {
   document.querySelectorAll('.rail-btn').forEach(b => b.classList.toggle('active', b.dataset.section === section));
   document.querySelectorAll('.ps').forEach(s => s.classList.toggle('active', s.dataset.content === section));
   if (section === 'stats') renderZoneCounts();
-  if (section === 'history') renderHistoryPanel();
-  if (section === 'settings') renderSettings();
+  if (section === 'settings') { renderSettings(); renderHistoryPanel(); }
   if (section === 'add') setTimeout(() => document.getElementById('f-title').focus(), 60);
 }
 
@@ -1010,6 +1009,18 @@ function wireEvents() {
   // Modal overlay click closes
   document.getElementById('modal').addEventListener('click', e => {
     if (e.target.id === 'modal') closeModal();
+  });
+
+  // Click outside the floating panel → close it (native iOS sheet behavior).
+  // Skip if clicking inside the panel itself, on the rail (rail handles its
+  // own toggle), on the modal, or on a toast.
+  document.addEventListener('pointerdown', e => {
+    if (!state.ui.activeSection) return;
+    if (e.target.closest('#float-panel')) return;
+    if (e.target.closest('.rail')) return;
+    if (e.target.closest('#modal')) return;
+    if (e.target.closest('.toast-wrap')) return;
+    closePanel();
   });
 
   // Global keyboard

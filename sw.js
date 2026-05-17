@@ -1,6 +1,6 @@
 /* 靶式看板 — service worker (offline cache) */
 
-const CACHE = 'tbk-v1.0.4';
+const CACHE = 'tbk-v1.0.5';
 const ASSETS = [
   './',
   './index.html',
