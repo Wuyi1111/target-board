@@ -592,3 +592,19 @@ kbd{
     font-size:16px;
   }
 }
+
+/* In mobile Safari browser mode the URL bar sits at the bottom and overlaps
+   any position:fixed elements. Push the rail, panel, and trash up far enough
+   to clear it. When installed as a PWA (display-mode:standalone) this rule
+   does not apply, so layout stays tight. */
+@media (max-width:639px) and (display-mode:browser){
+  .rail{
+    bottom:calc(var(--rail-margin) + env(safe-area-inset-bottom, 0px) + 80px);
+  }
+  .float-panel{
+    bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px) + 80px);
+  }
+  .trash-zone{
+    bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px) + 80px);
+  }
+}
