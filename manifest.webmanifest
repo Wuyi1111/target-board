@@ -1,0 +1,20 @@
+{
+  "name": "靶式看板",
+  "short_name": "靶式看板",
+  "description": "靶环式任务看板 — 把任务按紧急程度可视化",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f7f6f3",
+  "theme_color": "#f7f6f3",
+  "lang": "zh-CN",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

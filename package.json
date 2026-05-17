@@ -1,0 +1,12 @@
+{
+  "name": "target-board",
+  "version": "1.0.0",
+  "description": "本地运行的靶环式任务看板 / A local-only target-style task board",
+  "private": true,
+  "scripts": {
+    "start": "npx -y serve -l 3000 .",
+    "start:python": "python3 -m http.server 8000"
+  },
+  "license": "MIT",
+  "author": "Yi Wu <wuyiwuyi97@gmail.com>"
+}
