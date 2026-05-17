@@ -582,4 +582,13 @@ kbd{
     bottom:calc(var(--rail-size) + var(--rail-margin) + var(--rail-gap) + env(safe-area-inset-bottom, 0px));
     width:52px;height:52px;
   }
+
+  /* iOS auto-zooms when an input with font-size < 16px receives focus.
+     Bump form fields to 16px on small screens to prevent that. */
+  .form-row input,
+  .form-row select,
+  .form-row textarea,
+  .user-name-input{
+    font-size:16px;
+  }
 }
