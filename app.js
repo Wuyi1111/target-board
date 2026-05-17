@@ -4,8 +4,8 @@
    靶式看板 v2 — app.js
    ============================================================ */
 
-const APP_VERSION = '1.0.2';
-const SW_CACHE_NAME = 'tbk-v1.0.2';
+const APP_VERSION = '1.0.3';
+const SW_CACHE_NAME = 'tbk-v1.0.3';
 const SCHEMA_VERSION = 2;
 const LS_KEY = 'tbk_state_v2';
 const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
