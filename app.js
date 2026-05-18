@@ -4,8 +4,8 @@
    靶式看板 v2 — app.js
    ============================================================ */
 
-const APP_VERSION = '1.0.6';
-const SW_CACHE_NAME = 'tbk-v1.0.6';
+const APP_VERSION = '1.0.7';
+const SW_CACHE_NAME = 'tbk-v1.0.7';
 const SCHEMA_VERSION = 2;
 const LS_KEY = 'tbk_state_v2';
 const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
@@ -334,15 +334,57 @@ function renderUserFilters() {
 }
 
 function renderZoneCounts() {
-  const counts = { urgent: 0, todo: 0, should: 0 };
-  state.tasks.forEach(t => { if (!t.completed && counts[t.zone] !== undefined) counts[t.zone]++; });
   const el = document.getElementById('zone-counts');
-  el.innerHTML = Object.entries(counts).map(([z, n]) => `
-    <div class="zone-count-row">
-      <div class="zone-dot" style="background:${ZONE_COLORS[z]}"></div>
-      <div class="count-label">${ZONE_LABELS[z]}</div>
-      <div class="count-num">${n}</div>
-    </div>`).join('');
+  if (!el) return;
+  el.className = 'zone-detail';
+
+  const groups = { urgent: [], todo: [], should: [] };
+  state.tasks.forEach(t => {
+    if (!t.completed && groups[t.zone]) groups[t.zone].push(t);
+  });
+  // Sort inside each group: tasks with DDL first (soonest first), then no-DDL
+  const today = (() => { const d = new Date(); d.setHours(0,0,0,0); return d; })();
+  Object.values(groups).forEach(arr => arr.sort((a, b) => {
+    if (!a.ddl && !b.ddl) return 0;
+    if (!a.ddl) return 1;
+    if (!b.ddl) return -1;
+    return (parseLocalDate(a.ddl) - today) - (parseLocalDate(b.ddl) - today);
+  }));
+
+  el.innerHTML = ['urgent', 'todo', 'should'].map(zone => {
+    const items = groups[zone];
+    const list = items.length ? items.map(t => {
+      const u = getUser(t.userId);
+      const status = ddlStatus(t.ddl);
+      const badge = status === 'overdue'
+        ? `<span class="badge badge-overdue">${ddlBadgeText(status)}</span>`
+        : status === 'soon'
+          ? `<span class="badge badge-soon">${ddlBadgeText(status)}</span>`
+          : '';
+      return `
+        <div class="zone-task-item" data-zone="${esc(zone)}">
+          <div class="zone-task-title">${esc(t.title)}</div>
+          ${t.desc ? `<div class="zone-task-desc">${esc(t.desc)}</div>` : ''}
+          <div class="zone-task-meta">
+            <span class="user-dot" style="background:${esc(u.color)}"></span>
+            <span>${esc(u.name)}</span>
+            ${t.ddl ? `<span>· DDL ${esc(t.ddl)}</span>` : ''}
+            ${badge ? `· ${badge}` : ''}
+          </div>
+        </div>
+      `;
+    }).join('') : '<div class="zone-empty">这一圈还没有任务</div>';
+    return `
+      <div class="zone-group">
+        <div class="zone-group-header">
+          <span class="zone-dot" style="background:${ZONE_COLORS[zone]}"></span>
+          <span>${ZONE_LABELS[zone]}</span>
+          <span class="zone-group-count">${items.length}</span>
+        </div>
+        <div class="zone-group-list">${list}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderHistoryPanel() {
@@ -924,6 +966,7 @@ function openPanel(section) {
   state.ui.activeSection = section;
   const panel = document.getElementById('float-panel');
   panel.classList.add('open');
+  panel.classList.toggle('fullscreen', section === 'stats');
   panel.setAttribute('aria-hidden', 'false');
   document.getElementById('float-panel-title').textContent = SECTION_TITLES[section] || '';
   document.querySelectorAll('.rail-btn').forEach(b => b.classList.toggle('active', b.dataset.section === section));
@@ -939,6 +982,7 @@ function closePanel() {
   state.ui.activeSection = null;
   const panel = document.getElementById('float-panel');
   panel.classList.remove('open');
+  panel.classList.remove('fullscreen');
   panel.setAttribute('aria-hidden', 'true');
   document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
 }
