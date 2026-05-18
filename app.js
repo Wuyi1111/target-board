@@ -4,8 +4,8 @@
    靶式看板 v2 — app.js
    ============================================================ */
 
-const APP_VERSION = '1.0.7';
-const SW_CACHE_NAME = 'tbk-v1.0.7';
+const APP_VERSION = '1.0.8';
+const SW_CACHE_NAME = 'tbk-v1.0.8';
 const SCHEMA_VERSION = 2;
 const LS_KEY = 'tbk_state_v2';
 const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
@@ -897,7 +897,7 @@ async function renderSettings() {
   const setC = document.getElementById('set-cache');
   if (!setV || !setS || !setC) return;
 
-  setV.textContent = '靶式看板 v' + APP_VERSION;
+  setV.textContent = '靶式待办 v' + APP_VERSION;
 
   const raw = localStorage.getItem(LS_KEY) || '';
   const sizeKB = (new Blob([raw]).size / 1024).toFixed(1);
