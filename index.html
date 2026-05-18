@@ -134,15 +134,19 @@
         <div class="zone-count" id="zone-counts"></div>
       </section>
 
-      <!-- SETTINGS (includes history) -->
+      <!-- HISTORY (opened from settings → 历史记录 row) -->
+      <section class="ps" data-content="history">
+        <div id="history-list" class="history-list"></div>
+      </section>
+
+      <!-- SETTINGS -->
       <section class="ps" data-content="settings">
-        <div class="settings-block">
+        <div class="settings-block tappable" data-action="open-history">
           <div class="settings-label">历史记录</div>
-          <div id="history-list" class="history-list"></div>
-        </div>
-        <div class="settings-block">
-          <div class="settings-label">版本</div>
-          <div class="settings-value" id="set-version">—</div>
+          <div class="settings-row">
+            <span id="set-history-summary">—</span>
+            <span class="chevron">›</span>
+          </div>
         </div>
         <div class="settings-block">
           <div class="settings-label">本地数据</div>
@@ -154,6 +158,7 @@
         </div>
         <button class="btn-sm" style="width:100%;margin-top:6px" data-action="refresh-cache" type="button">更新到最新版本</button>
         <button class="btn-sm btn-danger" style="width:100%;margin-top:6px" data-action="clear-data" type="button">清空所有本地数据</button>
+        <div class="settings-footer-version" id="set-version">—</div>
       </section>
 
     </div>

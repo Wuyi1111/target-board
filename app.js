@@ -4,8 +4,8 @@
    靶式看板 v2 — app.js
    ============================================================ */
 
-const APP_VERSION = '1.0.8';
-const SW_CACHE_NAME = 'tbk-v1.0.8';
+const APP_VERSION = '1.0.9';
+const SW_CACHE_NAME = 'tbk-v1.0.9';
 const SCHEMA_VERSION = 2;
 const LS_KEY = 'tbk_state_v2';
 const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
@@ -13,7 +13,7 @@ const LS_KEYS_V1 = { tasks: 'tbk_tasks', users: 'tbk_users', hist: 'tbk_hist' };
 const ZONE_LABELS = { urgent: '紧急', todo: '需要做', should: '应做' };
 const ZONE_COLORS = { urgent: '#d75e4e', todo: '#d88a3a', should: '#b8b5ad' };
 const RING_CLASS = { urgent: 'r-urgent', todo: 'r-todo', should: 'r-should' };
-const SECTION_TITLES = { add: '添加任务', filter: '筛选', users: '用户管理', stats: '圈层统计', settings: '设置' };
+const SECTION_TITLES = { add: '添加任务', filter: '筛选', users: '用户管理', stats: '圈层统计', history: '历史记录', settings: '设置' };
 
 const state = {
   tasks: [],
@@ -117,7 +117,6 @@ function load() {
   if (!state.users.length) {
     state.users = [
       { id: 'u1', name: 'User A', color: hslToHex(260, 55, 55) },
-      { id: 'u2', name: 'User B', color: hslToHex(140, 55, 50) },
     ];
   }
 }
@@ -291,10 +290,9 @@ function renderCards() {
     const ddlText = t.ddl ? `<span>DDL ${esc(t.ddl)}</span>` : '';
 
     card.innerHTML = `
-      <div class="card-bar" style="background:${esc(u.color)}"></div>
       <div class="card-title">${esc(t.title)}</div>
       <div class="card-meta">
-        <span class="user-dot" style="background:${esc(u.color)}" title="${esc(u.name)}"></span>
+        <span class="zone-tag-dot" style="background:${ZONE_COLORS[t.zone] || '#ccc'}" title="${esc(ZONE_LABELS[t.zone] || '')}"></span>
         ${badge}${ddlText}
       </div>
       <button class="card-done-btn" type="button" data-action="done" title="完成">✓</button>`;
@@ -362,15 +360,19 @@ function renderZoneCounts() {
           ? `<span class="badge badge-soon">${ddlBadgeText(status)}</span>`
           : '';
       return `
-        <div class="zone-task-item" data-zone="${esc(zone)}">
-          <div class="zone-task-title">${esc(t.title)}</div>
-          ${t.desc ? `<div class="zone-task-desc">${esc(t.desc)}</div>` : ''}
-          <div class="zone-task-meta">
-            <span class="user-dot" style="background:${esc(u.color)}"></span>
-            <span>${esc(u.name)}</span>
-            ${t.ddl ? `<span>· DDL ${esc(t.ddl)}</span>` : ''}
-            ${badge ? `· ${badge}` : ''}
+        <div class="swipe-row" data-task-id="${esc(t.id)}">
+          <button class="swipe-action swipe-complete" type="button" data-action="swipe-complete" data-task-id="${esc(t.id)}">完成</button>
+          <div class="swipe-content zone-task-item" data-zone="${esc(zone)}" data-locked="0">
+            <div class="zone-task-title">${esc(t.title)}</div>
+            ${t.desc ? `<div class="zone-task-desc">${esc(t.desc)}</div>` : ''}
+            <div class="zone-task-meta">
+              <span class="user-dot" style="background:${esc(u.color)}"></span>
+              <span>${esc(u.name)}</span>
+              ${t.ddl ? `<span>· DDL ${esc(t.ddl)}</span>` : ''}
+              ${badge ? `· ${badge}` : ''}
+            </div>
           </div>
+          <button class="swipe-action swipe-delete" type="button" data-action="swipe-delete" data-task-id="${esc(t.id)}">删除</button>
         </div>
       `;
     }).join('') : '<div class="zone-empty">这一圈还没有任务</div>';
@@ -385,23 +387,103 @@ function renderZoneCounts() {
       </div>
     `;
   }).join('');
+
+  // Attach swipe handlers to the freshly-rendered rows
+  el.querySelectorAll('.swipe-row .swipe-content').forEach(attachSwipe);
+}
+
+function attachSwipe(content) {
+  let startX = 0, startY = 0, captured = false, active = false;
+  const W = 80;
+  const get = () => parseInt(content.dataset.locked || '0', 10);
+  const set = (v) => {
+    content.dataset.locked = String(v);
+    content.style.transform = `translateX(${v * W}px)`;
+  };
+
+  const closeAllOthers = () => {
+    document.querySelectorAll('.swipe-content[data-locked]').forEach(el => {
+      if (el !== content && el.dataset.locked !== '0') {
+        el.dataset.locked = '0';
+        el.style.transform = 'translateX(0)';
+      }
+    });
+  };
+
+  content.addEventListener('pointerdown', e => {
+    if (e.target.closest('.swipe-action')) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    captured = false;
+    active = true;
+  });
+
+  content.addEventListener('pointermove', e => {
+    if (!active) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!captured) {
+      if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 6) {
+        captured = true;
+        try { content.setPointerCapture(e.pointerId); } catch (_) {}
+        content.classList.add('swiping');
+        closeAllOthers();
+      } else if (Math.abs(dy) > 6) {
+        active = false;
+        return;
+      } else {
+        return;
+      }
+    }
+    let target = get() * W + dx;
+    target = Math.max(-W - 20, Math.min(W + 20, target));
+    content.style.transform = `translateX(${target}px)`;
+  });
+
+  const finish = (e) => {
+    if (!active) return;
+    active = false;
+    content.classList.remove('swiping');
+    if (!captured) return;
+    const dx = e.clientX - startX;
+    const total = get() * W + dx;
+    let lock = 0;
+    if (total < -W / 2) lock = -1;
+    else if (total > W / 2) lock = 1;
+    set(lock);
+  };
+  content.addEventListener('pointerup', finish);
+  content.addEventListener('pointercancel', () => {
+    if (!active) return;
+    active = false;
+    content.classList.remove('swiping');
+    content.style.transform = `translateX(${get() * W}px)`;
+  });
+
+  // Tap when locked open → snap back
+  content.addEventListener('click', e => {
+    if (get() !== 0 && !e.target.closest('.swipe-action')) {
+      set(0);
+      e.stopPropagation();
+    }
+  });
 }
 
 function renderHistoryPanel() {
   const el = document.getElementById('history-list');
   if (!el) return;
   if (!state.history.length) {
-    el.innerHTML = '<div style="font-size:11px;color:var(--muted);padding:4px 0">暂无历史记录</div>';
+    el.innerHTML = '<div style="font-size:14px;color:var(--muted);padding:10px 4px;text-align:center">暂无历史记录</div>';
     return;
   }
-  el.innerHTML = state.history.slice(0, 30).map(h => `
+  el.innerHTML = state.history.map(h => `
     <div class="history-item">
-      <div style="display:flex;align-items:center;gap:6px">
-        <div class="user-dot" style="background:${esc(h.userColor)}"></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="user-dot" style="background:${esc(ZONE_COLORS[h.zone] || '#ccc')}"></div>
         <div class="h-title">${esc(h.title)}</div>
       </div>
       <div class="h-meta">
-        ${esc(h.userName)} · ${esc(ZONE_LABELS[h.zone] || h.zone || '')}<br>
+        ${esc(ZONE_LABELS[h.zone] || h.zone || '')} · ${esc(h.userName)}<br>
         ${h.ddl ? 'DDL ' + esc(h.ddl) + ' · ' : ''}完成于 ${esc(h.completedAt)}
       </div>
     </div>`).join('');
@@ -895,9 +977,14 @@ async function renderSettings() {
   const setV = document.getElementById('set-version');
   const setS = document.getElementById('set-storage');
   const setC = document.getElementById('set-cache');
+  const setH = document.getElementById('set-history-summary');
   if (!setV || !setS || !setC) return;
 
-  setV.textContent = '靶式待办 v' + APP_VERSION;
+  if (setH) setH.textContent = state.history.length
+    ? `${state.history.length} 条已完成`
+    : '暂无历史记录';
+
+  setV.textContent = '靶式待办 · v' + APP_VERSION;
 
   const raw = localStorage.getItem(LS_KEY) || '';
   const sizeKB = (new Blob([raw]).size / 1024).toFixed(1);
@@ -928,7 +1015,6 @@ function clearAllData() {
   state.tasks = [];
   state.users = [
     { id: 'u1', name: 'User A', color: hslToHex(260, 55, 55) },
-    { id: 'u2', name: 'User B', color: hslToHex(140, 55, 50) },
   ];
   state.history = [];
   state.filters = { users: ['all'], zone: 'all' };
@@ -966,13 +1052,15 @@ function openPanel(section) {
   state.ui.activeSection = section;
   const panel = document.getElementById('float-panel');
   panel.classList.add('open');
-  panel.classList.toggle('fullscreen', section === 'stats');
+  // Stats and history are full-screen detail views
+  panel.classList.toggle('fullscreen', section === 'stats' || section === 'history');
   panel.setAttribute('aria-hidden', 'false');
   document.getElementById('float-panel-title').textContent = SECTION_TITLES[section] || '';
   document.querySelectorAll('.rail-btn').forEach(b => b.classList.toggle('active', b.dataset.section === section));
   document.querySelectorAll('.ps').forEach(s => s.classList.toggle('active', s.dataset.content === section));
   if (section === 'stats') renderZoneCounts();
-  if (section === 'settings') { renderSettings(); renderHistoryPanel(); }
+  if (section === 'settings') renderSettings();
+  if (section === 'history') renderHistoryPanel();
   // Sync focus so iOS keyboard pops up immediately when the add panel opens
   // via the rail button. setTimeout would break the user gesture chain.
   if (section === 'add') document.getElementById('f-title').focus();
@@ -1037,6 +1125,20 @@ function wireEvents() {
     else if (action === 'clear-data') clearAllData();
     else if (action === 'refresh-cache') refreshCache();
     else if (action === 'close-panel') closePanel();
+    else if (action === 'open-history') openPanel('history');
+    else if (action === 'swipe-complete') {
+      e.stopPropagation();
+      completeTask(el.dataset.taskId);
+    }
+    else if (action === 'swipe-delete') {
+      e.stopPropagation();
+      const t = state.tasks.find(x => x.id === el.dataset.taskId);
+      state.tasks = state.tasks.filter(x => x.id !== el.dataset.taskId);
+      save();
+      render();
+      if (state.ui.activeSection === 'stats') renderZoneCounts();
+      if (t) toast('已删除：' + t.title);
+    }
     else if (action === 'done' && taskCard) {
       e.stopPropagation();
       completeTask(taskCard.dataset.taskId);
